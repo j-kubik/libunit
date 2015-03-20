@@ -4,6 +4,8 @@
 #include "quantity.h"
 #include "factors.h"
 
+namespace LibUnit{
+
 /**
  *
  * @defgroup si_units SI Units
@@ -237,19 +239,19 @@ public:
 
 /** @brief Helper operator. */
 template <typename T>
-inline T operator*(const T& t, OneType){
+inline T operator*(T t, OneType){
     return t;
 }
 
 /** @brief Helper operator. */
 template <typename T>
-inline T operator*(OneType, const T& t){
+inline T operator*(OneType, T t){
     return t;
 }
 
 /** @brief Helper operator. */
-inline OneType operator*(OneType, OneType){
-    return OneType();
+inline int operator*(OneType, OneType){
+    return 1;
 }
 
 }
@@ -315,5 +317,7 @@ Quantity<Sievert, Helper::OneType>     sievert;
 Quantity<Katal, Helper::OneType>       katal;
 
 /** }@ */
+
+}
 
 #endif // SI_H

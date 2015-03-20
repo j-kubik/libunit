@@ -7,6 +7,8 @@
  * @file unitof.h
  */
 
+namespace LibUnit{
+
 /** @cond DOXYGEN_EXCLUDE */
 template <typename Unit, typename T>
 class Quantity;
@@ -1062,15 +1064,126 @@ public:
 //------------------------------------------------------------------------------------------------------------------
 
 /**
+ * @brief Helper class used to compute ratio of values of two classes.
+ * Result type is exatly the same as using basic variables if no data loss
+ * occurs, or double if data loss occurs (ie. dividing two integrals.)
+ *
+ * If dividing integrals, where result is also an integral, result type is also
+ * integral.
+ *
+ * Specialization for non-integral result types.
+ */
+template <typename T, typename U, bool integrals = std::is_integral<decltype(T::value)>::value && std::is_integral<decltype(U::value)>::value>
+class RatioFactor{
+public:
+    static constexpr auto value = T::value/U::value;
+
+    static constexpr inline auto getValue(){
+        return value;
+    }
+};
+
+/**
+ * @brief Helper class used to compute ratio of values of two classes.
+ * Result type is exatly the same as using basic variables if no data loss
+ * occurs, or double if data loss occurs (ie. dividing two integrals.)
+ *
+ * If dividing integrals, where result is also an integral, result type is also
+ * integral.
+ *
+ * Specialization for integral result types.
+ */
+template <typename T, typename U>
+class RatioFactor<T,U,  true>{
+private:
+    //typedef typename std::conditional<T::value%U::value, double, decltype(T::value/U::value)>::type type;
+    typedef typename std::conditional<T::value%U::value, double, decltype(U::value)>::type utype;
+public:
+    static constexpr auto value = T::value/utype(U::value);
+
+    static constexpr inline auto getValue(){
+        return value;
+    }
+
+};
+
+/**
+ * @brief Helper class used to invert ratio of a value of a class. Result type
+ * is integral if value is `1` or `-1`, otherwise it's double;
+ *
+ * Specialization for non-integral result types.
+ */
+template <typename T, bool integral = std::is_integral<decltype(T::value)>::value>
+class InvertFactor{
+public:
+    static constexpr auto value = 1/T::value;
+};
+
+/**
+ * @brief Helper class used to invert ratio of a value of a class. Result type
+ * is integral if value is `1` or `-1`, otherwise it's double;
+ *
+ * Specialization for integral result types.
+ */
+template <typename T>
+class InvertFactor<T, true>{
+private:
+    typedef typename std::conditional<T::value == 1 || T::value == -1, decltype(T::value), double>::type ttype;
+public:
+    static constexpr auto value = 1/ttype(T::value);
+};
+
+
+/**
  * @brief Helper function that raises a value to given integer power.
  * @return `value` to the power `pow`
  *
  * It is used in factor calculation of powers of units.
  */
-inline constexpr double power(double value, int pow){
+template <typename T, int pow, bool powlz=(pow<0)>
+class RaiseToPower{
+private:
+    typedef RaiseToPower<T, pow-1> prevPow;
+public:
+    static constexpr auto value = prevPow::value * T::value;
+};
 
-    return (pow<0) ? 1/power(value, -pow):(pow?(power(value,pow-1)*value):1);
-}
+template <typename T>
+class RaiseToPower<T, 1, false>{
+public:
+    static constexpr auto value = T::value;
+};
+
+template <typename T>
+class RaiseToPower<T, 0, false>{
+public:
+    static constexpr int value = 1;
+};
+
+template <typename T, int pow>
+class RaiseToPower<T, pow, true>{
+private:
+    typedef RaiseToPower<T, -pow> prevPow;
+public:
+    static constexpr auto value = InvertFactor<prevPow>::value;
+};
+
+
+//template <typename T, int pow, bool powlz=(pow<0)>
+//inline constexpr double power(T value){
+
+//    return (pow?(power(value,pow-1)*value):1);
+//}
+
+//template <typename T>
+//inline constexpr int power<T, 0, false>(T value){
+//    return 1;
+//}
+
+//template <typename T, int pow>
+//inline constexpr double power<T, pow, true>(T value){
+//    return 1/power<-pow>(value);
+//}
 
 
 /**
@@ -1089,7 +1202,7 @@ private:
     typedef FactorOf<Compound<Args...>, i-1> basic;
     typedef FactorOf<typename TypeAt<Compound<Args...>, i>::Type> iFactor;
 public:
-    static constexpr double value = basic::value*iFactor::value;
+    static constexpr auto value = basic::value*iFactor::value;
 };
 
 /**
@@ -1105,7 +1218,7 @@ public:
 template <typename ...Args>
 class FactorOf<Compound<Args...>, -1>{
 public:
-    static constexpr double value = 1;
+    static constexpr int value = 1;
 };
 
 /**
@@ -1123,7 +1236,7 @@ class FactorOf<Power<T, pow>, i>{
 private:
     typedef FactorOf<T> basic;
 public:
-    static constexpr double value = power(basic::value, pow);
+    static constexpr auto value = RaiseToPower<basic, pow>::value;
 };
 
 /**
@@ -1139,7 +1252,7 @@ public:
 template <typename T, int i>
 class FactorOf{
 public:
-   static constexpr double value = T::factor;
+   static constexpr auto value = T::factor;
 };
 
 //------------------------------------------------------------------------------------------------------------------
@@ -1363,6 +1476,15 @@ using DimensionOf = typename Helper::DimensionOf<T>::Type;
 template <typename T>
 using FactorOf = Helper::FactorOf<T>;
 
+                                                   /**
+                                                    *
+                                                    */
+template <typename T, typename U>
+using RatioFactor = Helper::RatioFactor<T,U>;
+
+template <typename T, typename U>
+using RatioFactorOf = Helper::RatioFactor<FactorOf<T>,FactorOf<U>>;
+
 /**
  * @brief Template used comapre units and dimensions.
  *
@@ -1425,12 +1547,9 @@ using FactorOf = Helper::FactorOf<T>;
 template <typename T, typename U>
 using IsEqual = Helper::IsEqual<T, U>;
 
-
-
 //------------------------------------------------------------------------------------------------------------------
-
-
-
+}
+//------------------------------------------------------------------------------------------------------------------
 
 
 

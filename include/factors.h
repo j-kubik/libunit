@@ -7,14 +7,16 @@
  * @file factors.h
  */
 
+namespace LibUnit{
+
 // ----------------------------------------------------------------------------------------------------------------------
 // Multiples and Fractions
 
 /**
  * @defgroup ten_powers Powers of 10
  * Multiple prefix can be applied to a unit to create a derived unit that
- * differes only be a integral power of ten. It can oly be applied to units,
- * never to dimensions.
+ * differes only be a integral power of ten. It should oly be applied to units,
+ * but not to dimensions.
  * @{
  */
 
@@ -92,7 +94,7 @@ using Yocto = Join<Power<Factor10, -24>, T>;
 /** }@ */
 
 // ----------------------------------------------------------------------------------------------------------------------
-
+}
 // ----------------------------------------------------------------------------------------------------------------------
 
 #endif // FACTORS_H

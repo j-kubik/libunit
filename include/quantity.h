@@ -5,11 +5,14 @@
 #include <utility>
 #include <iosfwd>
 
+#include <iostream>
+#include <typeinfo>
+
 /**
  * @file quantity.h
  */
 
-// ToDo: do something about factor ratios that can get cut.
+namespace LibUnit{
 
 /** @cond DOXYGEN_EXCLUDE */
 template <typename Unit, typename T = double>
@@ -75,6 +78,16 @@ private:
         static_assert(IsEqual<DimensionOf<U>, Compound<>>::value, "Dimensionless quantity required!!!");
     }
 
+    template <typename T2>
+    static inline auto value(const T2& t){
+        return t;
+    }
+
+    template <typename U, typename T2>
+    inline auto value(const Quantity<U, T2>& q){
+        return q.value();
+    }
+
 public:
     /**
      * @brief Contructs Quantity with non-initialized value.
@@ -101,13 +114,12 @@ public:
      */
     template <typename U, typename T2>
     inline Quantity(const Quantity<U, T2>& q)
-        :t(q.value() * (FactorOf<U>::value / FactorOf<Unit>::value))
+        :t(convert<U>(q.value()))
     {
         checkComaptible<U>();
     }
 
 
-    // ToDo: should I have this constructor? This might cause silent errors on assignments.
     /**
      * @brief Constructs a quantity with a given value.
      *
@@ -129,7 +141,7 @@ public:
     inline Quantity& operator=(const Quantity<U, T2>& q)
     {
         checkComaptible<U>();
-        t = q.value() *(FactorOf<U>::value / FactorOf<Unit>::value);
+        t = convert<U>(q.value());
         return *this;
     }
 
@@ -146,7 +158,7 @@ public:
     inline auto operator+(const Quantity<U, T2>& q) const
     {
         checkComaptible<U>();
-        auto val = t + q.value() *(FactorOf<U>::value / FactorOf<Unit>::value);
+        auto val = t + convert<U>(q.value());
         return Quantity<Unit, decltype(val)>(val);
     }
 
@@ -163,7 +175,7 @@ public:
     inline auto operator-(const Quantity<U, T2>& q) const
     {
         checkComaptible<U>();
-        auto val = t - q.value() *(FactorOf<U>::value / FactorOf<Unit>::value);
+        auto val = t - convert<U>(q.value());
         return Quantity<Unit, decltype(val)>(val);
     }
 
@@ -196,7 +208,6 @@ public:
         return Quantity<Unit, decltype(val)>(val);
     }
 
-    // ToDo: floating point rest?
     /**
      * @brief Division rest operator.
      * @return quantity instance of the same unit as leftside quantity.
@@ -210,7 +221,7 @@ public:
     inline auto operator%(const Quantity<U, T2>& q) const
     {
         checkComaptible<U>();
-        auto val = t % (q.value() *(FactorOf<U>::value / FactorOf<Unit>::value));
+        auto val = t % convert<U>(q.value());
         return Quantity<Unit, decltype(val)>(val);
     }
 
@@ -293,37 +304,37 @@ public:
     template <typename U, typename T2>
     inline bool operator==(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t == (q.value() *(FactorOf<U>::value / FactorOf<Unit>::value));
+        return t == convert<U>(q.value());
     }
 
     template <typename U, typename T2>
     inline bool operator!=(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t != (q.value() *(FactorOf<U>::value / FactorOf<Unit>::value));
+        return t != convert<U>(q.value());
     }
 
     template <typename U, typename T2>
     inline bool operator>(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t > (q.value() *(FactorOf<U>::value / FactorOf<Unit>::value));
+        return t > convert<U>(q.value());
     }
 
     template <typename U, typename T2>
     inline bool operator<(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t < (q.value() *(FactorOf<U>::value / FactorOf<Unit>::value));
+        return t < convert<U>(q.value());
     }
 
     template <typename U, typename T2>
     inline bool operator>=(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t >= (q.value() *(FactorOf<U>::value / FactorOf<Unit>::value));
+        return t >= convert<U>(q.value());
     }
 
     template <typename U, typename T2>
     inline bool operator<=(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t <= (q.value() *(FactorOf<U>::value / FactorOf<Unit>::value));
+        return t <= convert<U>(q.value());
     }
 
     //@}
@@ -348,7 +359,7 @@ public:
     template <typename U, typename T2>
     Quantity& operator+=(const Quantity<U, T2>& q){
         checkComaptible<U>();
-        t += (q.value() *(FactorOf<U>::value / FactorOf<Unit>::value));
+        t += convert<U>(q.value());
         return *this;
     }
 
@@ -365,7 +376,7 @@ public:
     template <typename U, typename T2>
     Quantity& operator-=(const Quantity<U, T2>& q){
         checkComaptible<U>();
-        t -= (q.value() *(FactorOf<U>::value / FactorOf<Unit>::value));
+        t -= convert<U>(q.value());
         return *this;
     }
 
@@ -419,7 +430,7 @@ public:
     template <typename T2>
     Quantity& operator%=(const T2& q){
         checkNoUnit<UnitOf<T2>>();
-        t %= ::value(q);
+        t %= value(q);
         return *this;
     }
 
@@ -525,31 +536,25 @@ public:
      * Can be used to change value of quantity without dimension checking.
      * Use with caution.
      */
-    inline T& ref() const{
+    inline T& ref(){
         return t;
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * @brief Static function used to convert values of known units.
+     *
+     * Converts a value in unit `U` into a value in unit `Unit`.
+     */
+    template <typename U, typename T2>
+    static inline constexpr auto convert(T2 t){
+        return t * ((decltype(RatioFactorOf<U, Unit>::value)) RatioFactorOf<U, Unit>::value);
     }
 
     friend std::ostream& operator<< <Unit, T>(std::ostream&, const Quantity<Unit, T>&);
     friend std::istream& operator>> <Unit, T>(std::istream&, const Quantity<Unit, T>&);
-
 };
-
-/** @cond DOXYGEN_EXCLUDE */
-template <typename Unit, typename T>
-inline auto value(const Quantity<Unit, T>& q){
-    return q.value();
-}
-/** @endcond */
-
-/**
- * @brief Internal value.
- * @return internal value of quantity or value of operand if operand is not
- * quantity.
- */
-template <typename T>
-inline auto value(const T& t){
-    return t;
-}
 
 /**
  * @brief Quantity multiplication operator.
@@ -647,6 +652,7 @@ inline std::istream& operator>>(std::istream& s, const Quantity<Unit,T>& q){
     return s;
 }
 
+}
 
 
 #endif // QUANTITY_H
