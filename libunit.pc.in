@@ -1,5 +1,0 @@
-prefix=@prefix@
-includedir=@libunitincludedir@
-
-Cflags: -I${includedir}
-CXXflags: -I@cpp_ver@
