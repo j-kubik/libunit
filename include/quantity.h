@@ -1,11 +1,11 @@
 #ifndef QUANTITY_H
 #define QUANTITY_H
 
-#include "units.h"
+#include "unitmanip.h"
 #include <utility>
 #include <iosfwd>
 
-#include <iostream>
+//#include <iostream>
 #include <typeinfo>
 
 /**
@@ -114,7 +114,7 @@ public:
      */
     template <typename U, typename T2>
     inline Quantity(const Quantity<U, T2>& q)
-        :t(convert<U>(q.value()))
+        :t(Convert<U, Unit>::value(q.value()))
     {
         checkComaptible<U>();
     }
@@ -141,7 +141,7 @@ public:
     inline Quantity& operator=(const Quantity<U, T2>& q)
     {
         checkComaptible<U>();
-        t = convert<U>(q.value());
+        t = Convert<U, Unit>::value(q.value());
         return *this;
     }
 
@@ -158,7 +158,7 @@ public:
     inline auto operator+(const Quantity<U, T2>& q) const
     {
         checkComaptible<U>();
-        auto val = t + convert<U>(q.value());
+        auto val = t + Convert<U, Unit>::value(q.value());
         return Quantity<Unit, decltype(val)>(val);
     }
 
@@ -175,7 +175,7 @@ public:
     inline auto operator-(const Quantity<U, T2>& q) const
     {
         checkComaptible<U>();
-        auto val = t - convert<U>(q.value());
+        auto val = t - Convert<U, Unit>::value(q.value());
         return Quantity<Unit, decltype(val)>(val);
     }
 
@@ -221,7 +221,7 @@ public:
     inline auto operator%(const Quantity<U, T2>& q) const
     {
         checkComaptible<U>();
-        auto val = t % convert<U>(q.value());
+        auto val = t % Convert<U, Unit>::value(q.value());
         return Quantity<Unit, decltype(val)>(val);
     }
 
@@ -304,37 +304,37 @@ public:
     template <typename U, typename T2>
     inline bool operator==(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t == convert<U>(q.value());
+        return t == Convert<U, Unit>::value(q.value());
     }
 
     template <typename U, typename T2>
     inline bool operator!=(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t != convert<U>(q.value());
+        return t != Convert<U, Unit>::value(q.value());
     }
 
     template <typename U, typename T2>
     inline bool operator>(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t > convert<U>(q.value());
+        return t > Convert<U, Unit>::value(q.value());
     }
 
     template <typename U, typename T2>
     inline bool operator<(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t < convert<U>(q.value());
+        return t < Convert<U, Unit>::value(q.value());
     }
 
     template <typename U, typename T2>
     inline bool operator>=(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t >= convert<U>(q.value());
+        return t >= Convert<U, Unit>::value(q.value());
     }
 
     template <typename U, typename T2>
     inline bool operator<=(const Quantity<U, T2>& q) const{
         checkComaptible<U>();
-        return t <= convert<U>(q.value());
+        return t <= Convert<U, Unit>::value(q.value());
     }
 
     //@}
@@ -359,7 +359,7 @@ public:
     template <typename U, typename T2>
     Quantity& operator+=(const Quantity<U, T2>& q){
         checkComaptible<U>();
-        t += convert<U>(q.value());
+        t += Convert<U, Unit>::value(q.value());
         return *this;
     }
 
@@ -376,7 +376,7 @@ public:
     template <typename U, typename T2>
     Quantity& operator-=(const Quantity<U, T2>& q){
         checkComaptible<U>();
-        t -= convert<U>(q.value());
+        t -= Convert<U, Unit>::value(q.value());
         return *this;
     }
 
@@ -542,15 +542,15 @@ public:
 
     //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-    /**
+    /*/**
      * @brief Static function used to convert values of known units.
      *
      * Converts a value in unit `U` into a value in unit `Unit`.
      */
-    template <typename U, typename T2>
+    /*template <typename U, typename T2>
     static inline constexpr auto convert(T2 t){
         return t * ((decltype(RatioFactorOf<U, Unit>::value)) RatioFactorOf<U, Unit>::value);
-    }
+    }*/
 
     friend std::ostream& operator<< <Unit, T>(std::ostream&, const Quantity<Unit, T>&);
     friend std::istream& operator>> <Unit, T>(std::istream&, const Quantity<Unit, T>&);

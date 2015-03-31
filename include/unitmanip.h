@@ -4,8 +4,10 @@
 #include <type_traits>
 
 /**
- * @file unitof.h
+ * @file unitmanip.h
  */
+
+// ToDo: fill in tparam fields!!!
 
 namespace LibUnit{
 
@@ -18,6 +20,12 @@ class Power;
 
 template <typename ...Args>
 class Compound;
+
+template <typename T>
+class IsSimplified;
+
+template <typename T, typename U, bool = IsSimplified<T>::value && IsSimplified<U>::value>
+class IsEqual;
 
 /** @endcond */
 
@@ -44,9 +52,6 @@ class BasicOf;
 
 template <typename T, typename U, int i=TypeCount<T>::value-1>
 class HasPower;
-
-template <typename T, typename U>
-class IsEqual;
 
 template <typename T, typename U>
 class Join;
@@ -296,7 +301,7 @@ private:
     typedef HasPower<Compound<Args...>, T, i-1> Basic;
     typedef typename TypeAt<Compound<Args...>, i>::Type iType;
 public:
-    enum:int { value = Basic::value || HasPower<T, iType>::value };
+    enum:int { value = Basic::value || IsEqual<T, iType>::value };
 };
 
 /**
@@ -325,100 +330,12 @@ public:
  * argument can be a singular unit or dimension or a power of it, but never a
  * compound unit or dimension.
  *
- * Specialization overload for Compound class and Power type.
- */
-template <typename ...Args, typename T, int pow, int i>
-class HasPower<Compound<Args...>, Power<T, pow>, i>{
-private:
-    typedef HasPower<Compound<Args...>, Power<T, pow>, i-1> Basic;
-    typedef typename TypeAt<Compound<Args...>, i>::Type iType;
-public:
-    static const bool value = Basic::value || HasPower<Power<T, pow>, iType>::value;
-};
-
-/**
- * @brief Helper class used for checking if (first template argument) class
- * representing unit or dimensions contains specific unit or dimension (second
- * class template).
- *
- * First template argument must be simplified. Second template
- * argument can be a singular unit or dimension or a power of it, but never a
- * compound unit or dimension.
- *
- * Specialization for recursion termination.
- */
-template <typename ...Args, typename T, int pow>
-class HasPower<Compound<Args...>, Power<T, pow>, -1>{
-public:
-    static const bool value = false;
-};
-
-/**
- * @brief Helper class used for checking if (first template argument) class
- * representing unit or dimensions contains specific unit or dimension (second
- * class template).
- *
- * First template argument must be simplified. Second template
- * argument can be a singular unit or dimension or a power of it, but never a
- * compound unit or dimension.
- *
- * Specialization for comparing power classes.
- */
-template <typename T, int tpow, typename U, int upow, int i>
-class HasPower<Power<T, tpow>, Power<U, upow>, i>{
-public:
-    static const bool value = std::is_same<T, U>::value && tpow == upow;
-};
-
-/**
- * @brief Helper class used for checking if (first template argument) class
- * representing unit or dimensions contains specific unit or dimension (second
- * class template).
- *
- * First template argument must be simplified. Second template
- * argument can be a singular unit or dimension or a power of it, but never a
- * compound unit or dimension.
- *
- * Specialization for comparing power class and singular type.
- */
-template <typename T, typename U, int upow, int i>
-class HasPower<T, Power<U, upow>, i>{
-public:
-    static const bool value = std::is_same<T, U>::value && upow == 1;
-};
-
-/**
- * @brief Helper class used for checking if (first template argument) class
- * representing unit or dimensions contains specific unit or dimension (second
- * class template).
- *
- * First template argument must be simplified. Second template
- * argument can be a singular unit or dimension or a power of it, but never a
- * compound unit or dimension.
- *
- * Specialization for comparing power class and singular type.
- */
-template <typename T, typename U, int tpow, int i>
-class HasPower<Power<T, tpow>, U, i>{
-public:
-    static const bool value = std::is_same<T, U>::value && tpow == 1;
-};
-
-/**
- * @brief Helper class used for checking if (first template argument) class
- * representing unit or dimensions contains specific unit or dimension (second
- * class template).
- *
- * First template argument must be simplified. Second template
- * argument can be a singular unit or dimension or a power of it, but never a
- * compound unit or dimension.
- *
  * Specialization for comparing singular types.
  */
 template <typename T, typename U, int i>
 class HasPower{
 public:
-    static const bool value = std::is_same<T, U>::value;
+    static const bool value = LibUnit::IsEqual<T, U>::value;
 };
 
 //------------------------------------------------------------------------------------------------------------------
@@ -501,6 +418,11 @@ public:
  * For Compound types IsEqualCompound is used.
  *
  * Specialization for simple types.
+ *
+ * @remark
+ * Note that there is no mixed Compound/non-compound specialization. Since only
+ * simplified types can be comapred, mixed pairs are unequal by definition, so
+ * this specialization is enough to handle those cases.
  */
 template <typename T, typename U>
 class IsEqualHelper{
@@ -525,18 +447,6 @@ public:
     static const bool value = (TypeCount<Compound<Args1...>>::value == TypeCount<Compound<Args2...>>::value) && IsEqualCompound<Compound<Args1...>, Compound<Args2...>>::value;
 };
 
-/**
- * @brief Helper class used for comparing units and dimensions.
- *
- * It is used to initially Flatten and Simplify Compared types, before passing
- * them to IsEqualHelper.
- */
-template <typename T, typename U>
-class IsEqual{
-public:
-    static const bool value = IsEqualHelper<typename Simplify<typename Flatten<Compound<T>>::Type>::Type, typename Simplify<typename Flatten<Compound<U>>::Type>::Type>::value;
-};
-
 //------------------------------------------------------------------------------------------------------------------
 
 
@@ -551,36 +461,6 @@ class Join{
 public:
     typedef Compound<T, U> Type;
 };
-
-//template <typename T, int i, typename U>
-//class Join<Power<T,i>, U>{
-//public:
-//    typedef Compound<Power<T,i>, U> Type;
-//};
-
-//template <typename T, int i, typename U>
-//class Join<U, Power<T,i>>{
-//public:
-//    typedef Compound<U, Power<T,i>> Type;
-//};
-
-//template <typename T, int i, typename U, int j>
-//class Join<Power<T,i>, Power<U,j>>{
-//public:
-//    typedef Compound<Power<T,i>, Power<U, j>> Type;
-//};
-
-//template <typename T, int i, typename ...Args>
-//class Join<Power<T,i>, Compound<Args...>>{
-//public:
-//    typedef Compound<Power<T,i>, Args...> Type;
-//};
-
-//template <typename T, int i, typename ...Args>
-//class Join<Compound<Args...>, Power<T,i>>{
-//public:
-//    typedef Compound<Args..., Power<T,i>> Type;
-//};
 
 /**
  * @brief Helper class used for joining units and dimensions into compound units
@@ -620,71 +500,16 @@ public:
 
 //------------------------------------------------------------------------------------------------------------------
 
-// If you take a type from a singular type, there is nothing left ;)
-//template <typename T, int i, int j>
-//class TakeAt{
-//public:
-//    typedef Compound<> Type;
-//};
-
-//template <typename ...Args, int i, int j>
-//class TakeAt<Compound<Args...>, i, j>{
-//private:
-//    typedef typename TakeAt<Compound<Args...>, i, j-1>::Type Basic;
-//public:
-//    typedef typename std::conditional<j==i,
-//                                      Basic,
-//                                      typename Join<Basic, typename TypeAt<Compound<Args...>, j>::Type>::Type
-//    >::type Type;
-//};
-
-//template <typename ...Args, int i>
-//class TakeAt<Compound<Args...>,i, -1>{
-//public:
-//    typedef Compound<> Type;
-//};
-
-//------------------------------------------------------------------------------------------------------------------
-
-// For singular types replaceAt can oly replace entire type...
-//template <typename T, typename U, int i, int j>
-//class ReplaceAt{
-//public:
-//    typedef Compound<Power<U>> Type;
-//};
-
-//template <typename T, typename U, int k, int i, int j>
-//class ReplaceAt<T, Power<U, k>, i, j>{
-//public:
-//    typedef Compound<Power<U, k>> Type;
-//};
-
-//template <typename ...Args, typename T, int i, int j>
-//class ReplaceAt<Compound<Args...>, T, i, j>{
-//private:
-//    typedef typename ReplaceAt<Compound<Args...>, T, i, j-1>::Type Basic;
-//public:
-//    typedef typename std::conditional<j==i,
-//                                      typename Join<Basic,T>::Type,
-//                                      typename Join<Basic, typename TypeAt<Compound<Args...>, j>::Type>::Type
-//    >::type Type;
-//};
-
-//template <typename ...Args, typename T, int i>
-//class ReplaceAt<Compound<Args...>, T, i, -1>{
-//public:
-//    typedef Compound<> Type;
-//};
-
-//------------------------------------------------------------------------------------------------------------------
-
 // Flatten Helper class.
 //
 // This class works on user-supplied compound types without any further checking.
-// It is used to transform possibly nested Compound type into flat list without nesting.
+// It is used to transform possibly nested Compound type into flat Compound list.
 
 /**
  * @brief Helper class used for flattening nested Compound types.
+ *
+ * @tparam Compound<Args...> Type to be falttened.
+ * @tparam i @keep_default
  *
  * Flattened type is guaranteed to be either a simple type, a power of a simple
  * type or a Compound containing simple types and powers of simple types.
@@ -705,6 +530,9 @@ public:
 /**
  * @brief Helper class used for flattening nested Compound types.
  *
+ * @tparam Compound<Args...> Type to be falttened.
+ * @tparam i @keep_default
+ *
  * Flattened type is guaranteed to be either a simple type, a power of a simple
  * type or a Compound containing simple types and powers of simple types.
  * Flatten converts input types into falttened types by extracting nested
@@ -721,6 +549,9 @@ public:
 
 /**
  * @brief Helper class used for flattening nested Compound types.
+ *
+ * @tparam Power<T, pow> Type to be falttened.
+ * @tparam i @keep_default
  *
  * Flattened type is guaranteed to be either a simple type, a power of a simple
  * type or a Compound containing simple types and powers of simple types.
@@ -739,6 +570,9 @@ public:
 /**
  * @brief Helper class used for flattening nested Compound types.
  *
+ * @tparam Power<T, 1> Type to be falttened.
+ * @tparam i @keep_default
+ *
  * Flattened type is guaranteed to be either a simple type, a power of a simple
  * type or a Compound containing simple types and powers of simple types.
  * Flatten converts input types into falttened types by extracting nested
@@ -756,6 +590,9 @@ public:
 /**
  * @brief Helper class used for flattening nested Compound types.
  *
+ * @tparam T Type to be falttened.
+ * @tparam i @keep_default
+ *
  * Flattened type is guaranteed to be either a simple type, a power of a simple
  * type or a Compound containing simple types and powers of simple types.
  * Flatten converts input types into falttened types by extracting nested
@@ -772,19 +609,6 @@ public:
 
 //------------------------------------------------------------------------------------------------------------------
 
-// SimplifyJoin is a helper class that is used by Simplify. It is inserting type T into U if U already contains
-// any power of T::basic. If resulting power of T::basic equals 0, resulting list has no entry for this type.
-//
-// If U doesnt contain a power of T::basic, entry is not created, and joined equals zero. Otherwise joined equals one.
-// Parameters:
-//  - U: Already simplified Compound class, that type T will be integrated into.
-//  - T: Power class, that should be integrated into U list.
-//  - i: helper parameter, it's default value should be preserved.
-//
-// Members:
-//  - joined: enum flag indicating if T was indeed integrated into resulting list.
-//  - Type:   Compound class representing resulting list.
-
 /** @cond DOXYGEN_EXCLUDE */
 template <typename U, typename T, int i = TypeCount<U>::value-1>
 class SimplifyJoin;
@@ -792,19 +616,20 @@ class SimplifyJoin;
 
 
 /**
- * @brief Helper class used for joining a type into a Compound type by adjusting
+ * @brief Helper class used for joining a type into a Compound type.
+ *
+ * @tparam U Already simplified Compound class, that type `T` will be integrated
+ * into.
+ * @tparam T Power class, that should be integrated into `U` list.
+ * @tparam i @keep_default
+ *
+ * Joining a type into a Compound type is performed by by adjusting
  * a power of preexisting power of same simple type and removing such entry
  * completely if final power equals `0`. If no preexisting power of given simple
  * type exists in given Compound, the `Type` typedef equals to input Compound
  * and `joined` member is set to `false`. Otherwise `joined` member is set to
  * `true`. Input Compound must be already simplified, and type to be joined
  * must be a power of a simple type.
- *
- * Template parameters:
- *  - `U`: Already simplified Compound class, that type T will be integrated
- * into.
- *  - `T`: Power class, that should be integrated into U list.
- *  - `i`: helper parameter, it's default value should be preserved.
  *
  * Specialization for recursive joining.
  */
@@ -818,12 +643,10 @@ template <typename ...Args, typename T, int i>
 class SimplifyJoin<Compound<Args...>, T, i>{
 private:
     typedef typename TypeAt<Compound<Args...>, i>::Type I;
-    //typedef typename I>>::Type iPower;
-    //typedef typename Simplify<Power<T>>::Type tPower;
     typedef SimplifyJoin<Compound<Args...>, T, i-1> Helper;
 
-    // This is here and not direclty public because doxygen was making huge mess
-    // out of it.
+    // This is here and not direclty public because doxygen makes a mess out of
+    // it.
     typedef typename std::conditional< std::is_same<typename BasicOf<T>::Type, typename BasicOf<I>::Type>::value,
                                        typename std::conditional<PowerOf<T>::value + PowerOf<I>::value,
                                                                  typename Join<typename Helper::Type, Power<typename BasicOf<T>::Type, PowerOf<T>::value + PowerOf<I>::value>>::Type,
@@ -842,18 +665,20 @@ public:
 
 
 /**
- * @brief Helper class used for joining a type into a Compound type by adjusting
+ * @brief Helper class used for joining a type into a Compound type.
+ *
+ * @tparam U Already simplified Compound class, that type `T` will be integrated
+ * into.
+ * @tparam T Power class, that should be integrated into `U` list.
+ * @tparam i @keep_default
+ *
+ * Joining a type into a Compound type is performed by by adjusting
  * a power of preexisting power of same simple type and removing such entry
  * completely if final power equals `0`. If no preexisting power of given simple
  * type exists in given Compound, the `Type` typedef equals to input Compound
  * and `joined` member is set to `false`. Otherwise `joined` member is set to
  * `true`. Input Compound must be already simplified, and type to be joined
  * must be a power of a simple type.
- *
- * Template parameters:
- *  - `U`: Already simplified Compound class, that type T will be integrated
- * into.
- *  - `T`: Power class, that should be integrated into U list.
  *
  * Specialization that stops recursion.
  */
@@ -867,6 +692,9 @@ public:
 
 /**
  * @brief Helper class used for simplifying a type.
+ *
+ * @tparam Compound<Args...> Type to be simplified.
+ * @tparam i @keep_default
  *
  * Type that is to be simplified must be flat. Simplified type is a flat type
  * that has at most one power of any singular type. If simplified type has only
@@ -896,6 +724,9 @@ public:
 /**
  * @brief Helper class used for simplifying a type.
  *
+ * @tparam Compound<Args...> Type to be simplified.
+ * @tparam i @keep_default
+ *
  * Type that is to be simplified must be flat. Simplified type is a flat type
  * that has at most one power of any singular type. If simplified type has only
  * a power of one singular type, then it should be an instance of a `Power`
@@ -914,6 +745,31 @@ public:
 
 /**
  * @brief Helper class used for simplifying a type.
+ *
+ * @tparam Compound<T> Type to be simplified.
+ * @tparam i @keep_default
+ *
+ * Type that is to be simplified must be flat. Simplified type is a flat type
+ * that has at most one power of any singular type. If simplified type has only
+ * a power of one singular type, then it should be an instance of a `Power`
+ * class, not wrapped in a `Compound`. If in addition power of this singular
+ * type equals one, simplified type equals to this simple type, not wrapped in
+ * `Power` or `Compound`. Empty-unit (dimensionless) is represented by empty
+ * `Compound<>`.
+ *
+ * Specialization for Compound types containing only one element.
+ */
+template <typename T, int i>
+class Simplify<Compound<T>, i>{
+public:
+    typedef typename Simplify<T>::Type Type;
+};
+
+/**
+ * @brief Helper class used for simplifying a type.
+ *
+ * @tparam Power<T, pow> Type to be simplified.
+ * @tparam i @keep_default
  *
  * Type that is to be simplified must be flat. Simplified type is a flat type
  * that has at most one power of any singular type. If simplified type has only
@@ -934,6 +790,9 @@ public:
 /**
  * @brief Helper class used for simplifying a type.
  *
+ * @tparam Power<T,1> Type to be simplified.
+ * @tparam i @keep_default
+ *
  * Type that is to be simplified must be flat. Simplified type is a flat type
  * that has at most one power of any singular type. If simplified type has only
  * a power of one singular type, then it should be an instance of a `Power`
@@ -952,6 +811,32 @@ public:
 
 /**
  * @brief Helper class used for simplifying a type.
+ *
+ * @tparam Power<T, 0> Type to be simplified.
+ * @tparam i @keep_default
+ *
+ * Type that is to be simplified must be flat. Simplified type is a flat type
+ * that has at most one power of any singular type. If simplified type has only
+ * a power of one singular type, then it should be an instance of a `Power`
+ * class, not wrapped in a `Compound`. If in addition power of this singular
+ * type equals one, simplified type equals to this simple type, not wrapped in
+ * `Power` or `Compound`. Empty-unit (dimensionless) is represented by empty
+ * `Compound<>`.
+ *
+ * Specialization for power-of-zero type.
+ */
+template <typename T, int i>
+class Simplify<Power<T, 0>, i>{
+public:
+    typedef Compound<> Type;
+};
+
+
+/**
+ * @brief Helper class used for simplifying a type.
+ *
+ * @tparam T Type to be simplified.
+ * @tparam i @keep_default
  *
  * Type that is to be simplified must be flat. Simplified type is a flat type
  * that has at most one power of any singular type. If simplified type has only
@@ -975,6 +860,8 @@ public:
  * @brief Helper class used to extract units form variables of qunatity and
  * non-quantity types. It assumes all non-quantity types to be dimensionless.
  *
+ * @tparam T Type of variable for which unit is computed.
+ *
  * Specialization for non-quantity types.
  */
 template <typename T>
@@ -986,6 +873,8 @@ public:
 /**
  * @brief Helper class used to extract units form variables of qunatity and
  * non-quantity types. It assumes all non-quantity types to be dimensionless.
+ *
+ * @tparam T Type of variable for which unit is computed.
  *
  * Specialization for quantity types.
  */
@@ -999,7 +888,10 @@ public:
 
 /**
  * @brief Helper class used to extract dimension form a type representing a
- * compound unit.
+ * unit.
+ *
+ * @tparam T Unit for which dimension is computed.
+ * @tparam i @keep_default
  *
  * Input type must be a proper unit ie. all simple units used must define
  * `Dimension` subtype.
@@ -1013,12 +905,15 @@ private:
     typedef typename DimensionOf<typename TypeAt<Compound<Args...>, i>::Type>::Type iDimension;
 public:
     typedef typename Join<basic, iDimension>::Type Type;
-    //!< Dimension of unit `T`;
+    //!< Dimension of template-parameter unit;
 };
 
 /**
  * @brief Helper class used to extract dimension form a type representing a
- * compound unit.
+ * unit.
+ *
+ * @tparam T Unit for which dimension is computed.
+ * @tparam i @keep_default
  *
  * Input type must be a proper unit ie. all simple units used must define
  * `Dimension` subtype.
@@ -1033,7 +928,10 @@ public:
 
 /**
  * @brief Helper class used to extract dimension form a type representing a
- * compound unit.
+ * unit.
+ *
+ * @tparam T Unit for which dimension is computed.
+ * @tparam i @keep_default
  *
  * Input type must be a proper unit ie. all simple units used must define
  * `Dimension` subtype.
@@ -1048,7 +946,10 @@ public:
 
 /**
  * @brief Helper class used to extract dimension form a type representing a
- * compound unit.
+ * unit.
+ *
+ * @tparam T Unit for which dimension is computed.
+ * @tparam i @keep_default
  *
  * Input type must be a proper unit ie. all simple units used must define
  * `Dimension` subtype.
@@ -1067,6 +968,12 @@ public:
  * @brief Helper class used to compute ratio of values of two classes.
  * Result type is exatly the same as using basic variables if no data loss
  * occurs, or double if data loss occurs (ie. dividing two integrals.)
+ *
+ * @tparam T Type that represents value in numerator. 'T' must contain `static
+ * constexpr` field `value`.
+ * @tparam U Type that represents value in denominator. 'U' must contain `static
+ * constexpr` field `value`.
+ * @tparam integral @keep_default
  *
  * If dividing integrals, where result is also an integral, result type is also
  * integral.
@@ -1087,6 +994,12 @@ public:
  * @brief Helper class used to compute ratio of values of two classes.
  * Result type is exatly the same as using basic variables if no data loss
  * occurs, or double if data loss occurs (ie. dividing two integrals.)
+ *
+ * @tparam T Type that represents value in numerator. 'T' must contain `static
+ * constexpr` field `value`.
+ * @tparam U Type that represents value in denominator. 'U' must contain `static
+ * constexpr` field `value`.
+ * @tparam integral @keep_default
  *
  * If dividing integrals, where result is also an integral, result type is also
  * integral.
@@ -1111,6 +1024,9 @@ public:
  * @brief Helper class used to invert ratio of a value of a class. Result type
  * is integral if value is `1` or `-1`, otherwise it's double;
  *
+ * @tparam T Type that contains `static constexpr` field `value`.
+ * @tparam integral @keep_default
+ *
  * Specialization for non-integral result types.
  */
 template <typename T, bool integral = std::is_integral<decltype(T::value)>::value>
@@ -1122,6 +1038,9 @@ public:
 /**
  * @brief Helper class used to invert ratio of a value of a class. Result type
  * is integral if value is `1` or `-1`, otherwise it's double;
+ *
+ * @tparam T Type that contains `static constexpr` field `value`.
+ * @tparam integral @keep_default
  *
  * Specialization for integral result types.
  */
@@ -1135,18 +1054,25 @@ public:
 
 
 /**
- * @brief Helper function that raises a value to given integer power.
+ * @brief Helper class that raises a value to given integer power.
  * @return `value` to the power `pow`
+ *
+ * @tparam T Type that contains `static constexpr` field `value`.
+ * @tparam pow Power to which value is raised to.
+ * @tparam powlz @keep_default
  *
  * It is used in factor calculation of powers of units.
  */
 template <typename T, int pow, bool powlz=(pow<0)>
 class RaiseToPower{
 private:
-    typedef RaiseToPower<T, pow-1> prevPow;
+    typedef RaiseToPower<T, pow/2> prevPow;
 public:
-    static constexpr auto value = prevPow::value * T::value;
+    static constexpr auto value = prevPow::value*prevPow::value
+          * (pow%2?T::value:1);
 };
+
+/** @cond DOXYGEN_EXCLUDE */
 
 template <typename T>
 class RaiseToPower<T, 1, false>{
@@ -1168,26 +1094,13 @@ public:
     static constexpr auto value = InvertFactor<prevPow>::value;
 };
 
-
-//template <typename T, int pow, bool powlz=(pow<0)>
-//inline constexpr double power(T value){
-
-//    return (pow?(power(value,pow-1)*value):1);
-//}
-
-//template <typename T>
-//inline constexpr int power<T, 0, false>(T value){
-//    return 1;
-//}
-
-//template <typename T, int pow>
-//inline constexpr double power<T, pow, true>(T value){
-//    return 1/power<-pow>(value);
-//}
-
+/** @endcond */
 
 /**
  * @brief Helper class used to compute factor used to convert units.
+ *
+ * @tparam T Unit to compute factor of.
+ * @tparam i @keep_default
  *
  * Input type must be a proper unit ie. all simple units used must define
  * `factor` static constant. Result is a multiplication of factors of all
@@ -1208,6 +1121,9 @@ public:
 /**
  * @brief Helper class used to compute factor used to convert units.
  *
+ * @tparam T Unit to compute factor of.
+ * @tparam i @keep_default
+ *
  * Input type must be a proper unit ie. all simple units used must define
  * `factor` static constant. Result is a multiplication of factors of all
  * simple units raised to powers in which those simple units appear in a unit
@@ -1223,6 +1139,9 @@ public:
 
 /**
  * @brief Helper class used to compute factor used to convert units.
+ *
+ * @tparam T Unit to compute factor of.
+ * @tparam i @keep_default
  *
  * Input type must be a proper unit ie. all simple units used must define
  * `factor` static constant. Result is a multiplication of factors of all
@@ -1241,6 +1160,9 @@ public:
 
 /**
  * @brief Helper class used to compute factor used to convert units.
+ *
+ * @tparam T Unit to compute factor of.
+ * @tparam i @keep_default
  *
  * Input type must be a proper unit ie. all simple units used must define
  * `factor` static constant. Result is a multiplication of factors of all
@@ -1262,6 +1184,9 @@ public:
 
 /**
  * @brief Class representing a power of a unit or a dimension.
+ *
+ * @tparam T type raised to power `pow`.
+ * @tparam pow Power to which type `T` is raised to.
  */
 template <typename T, int pow>
 class Power{
@@ -1303,21 +1228,20 @@ class Compound{
 public:
 };
 
-// ToDo: add some examples of how those work. It might be unclear from my
-//       clinical description.
-
 /**
  * @brief Template used in order to join two types int one compound type.
  *
  * Compound types passed are concatenated, not enclosed in outer Compound type.
  *
- * ####Examples####
+ * Examples
+ * ------------------------
  * ~~~~~~~~~~~~~~~~~~~~{.cpp}
  * Join<Compound<A,B>, Compound<C, D>>; // is Compound<A,B,C,D>
  * Join<Compound<A,B>, Compound<>>; // is Compound<A,B>
  * Join<Compound<A,B>, C>; // is Compound<A,B,C>
  * Join<A, Compound<B, C>>; // is Compound<A,B,C>
  * Join<A, B>; // Is Compound<A, B>
+ * Join<A, Compound<>>; // Is Compound<A>
  * ~~~~~~~~~~~~~~~~~~~~
  */
 
@@ -1327,10 +1251,13 @@ using Join = typename Helper::Join<T, U>::Type;
 /**
  * @brief Template used in order to flatten a type.
  *
+ * @tparam T Type to be flattened.
+ *
  * Flattened compound type is a Compound type containing only non-compound
  * types. Flattened non-compound type is also a non-Compound type.
  *
- * ####Examples####
+ * Examples
+ * ------------------------
  * ~~~~~~~~~~~~~~~~~~~~{.cpp}
  * Flatten<Compound<Compound<A,B>, Compound<C, D>>>; // is Compound<A,B,C,D>
  * Flatten<Compound<Compound<A,B>, Compound<B, A>>>; // is Compound<A,B,B,A>
@@ -1347,11 +1274,14 @@ using Flatten = typename Helper::Flatten<T>::Type;
 /**
  * @brief Template used in order to simplify a type.
  *
+ * @tparam T Type to be simplified.
+ *
  * Simplified type is a flattened type, that contains any simple type at mose
  * once. This means that all entries in an inputcompound type are converted into
  * a single entry in a output entry, raised to apropriate power.
  *
- * ####Examples####
+ * Examples
+ * ------------------------
  * ~~~~~~~~~~~~~~~~~~~~{.cpp}
  * Simplify<Compound<A,B,A>>; //is Compound<Power<A,2>, B>
  * Simplify<Compound<Power<A,2>, B, A>>; // is Compound<Power<A,3>, B>
@@ -1365,11 +1295,26 @@ template <typename T>
 using Simplify = typename Helper::Simplify<Flatten<T>>::Type;
 
 /**
+ * @brief Template used for checking if type `T` is already simplified.
+ *
+ * @tparam T Type for which simplifiaction check is to be performed.
+ *
+ * Represents `true_type` if `Simplify<T>` produces type `T`, or `false_type`
+ * otherwise.
+ */
+
+template <typename T>
+class IsSimplified: public std::integral_constant<bool, std::is_same<Simplify<T>, T>::value>{};
+
+/**
  * @brief Template used in order to invert a type.
  *
- * Tyype inversion means raising it to power of -1.
+ * @tparam T Type to be inverted.
  *
- * ####Examples####
+ * Type inversion means raising it to power of -1.
+ *
+ * Examples
+ * ------------------------
  * ~~~~~~~~~~~~~~~~~~~~{.cpp}
  * Invert<Compound<A, Power<B,2>, Power<C, -3>>>; // is Compound<Power<A, -1>, Power<B, -2>, Power<C, -3>>
  * ~~~~~~~~~~~~~~~~~~~~
@@ -1380,9 +1325,12 @@ using Invert = typename Helper::Raise<T, -1>::Type;
 /**
  * @brief Template used check a unit of a variable.
  *
+ * @tparam T Type of a varaible for which a unit is computed.
+ *
  * Variables other than Quantity are considered to be unitless.
  *
- * ####Examples####
+ * Examples
+ * ------------------------
  * ~~~~~~~~~~~~~~~~~~~~{.cpp}
  *
  * UnitOf<int>;                     // is Compound<>
@@ -1416,9 +1364,12 @@ using UnitOf = typename Helper::UnitOf<T>::Type;
 /**
  * @brief Template used compute dimension of a unit.
  *
+ * @tparam T Unit for which a dimension is computed.
+ *
  * Variables other than Quantity are considered to be unitless.
  *
- * ####Examples####
+ * Examples
+ * ------------------------
  * ~~~~~~~~~~~~~~~~~~~~{.cpp}
  * class Dim;
  * class Un1{
@@ -1437,12 +1388,15 @@ using DimensionOf = typename Helper::DimensionOf<T>::Type;
 /**
  * @brief Template used compute factor of a unit.
  *
+ * @tparam T Unit for which a factor is computed.
+ *
  * Factor of a unit is used to convert variables between units of the same
  * dimension. Value of a quantity in unit `Un1` after conversion to value in
  * unit `Un2` equals value multiplied by ration of the factor of unit `Un1` to
  * the factor of unit `Un2`.
  *
- * ####Examples####
+ * Examples
+ * ------------------------
  * ~~~~~~~~~~~~~~~~~~~~{.cpp}
  * class Dim1;
  * class Dim2;
@@ -1476,22 +1430,45 @@ using DimensionOf = typename Helper::DimensionOf<T>::Type;
 template <typename T>
 using FactorOf = Helper::FactorOf<T>;
 
-                                                   /**
-                                                    *
-                                                    */
+/**
+ * @brief Template used to compute a ratio of two factors.
+ *
+ * @tparam T Factor in the numerator.
+ * @tparam U Factor in the denominator.
+ *
+ * `static constexpr` member `value` represents value of a ratio of factors
+ * `T` and `U`.
+ */
 template <typename T, typename U>
 using RatioFactor = Helper::RatioFactor<T,U>;
 
+/**
+ * @brief Template used to compute a ratio of factors of two units.
+ *
+ * @tparam T Unit in the numerator.
+ * @tparam U Unit in the denominator.
+ *
+ * `static constexpr` member `value` represents value of a ratio of factors of
+ * units `T` and `U`.
+ */
 template <typename T, typename U>
 using RatioFactorOf = Helper::RatioFactor<FactorOf<T>,FactorOf<U>>;
 
 /**
- * @brief Template used comapre units and dimensions.
+ * @brief Template used to comapre units and dimensions.
+ *
+ * @tparam T First unit or dimension to be compared.
+ * @tparam U %Second unit or dimension to be compared.
+ * @tparam areSimple @keep_default
  *
  * Units and dimensions are considered equal if after simplification have the
- * same
+ * same simple type count, and for each simple type in one unit, there is the
+ * same simple type in same power in other. Order of types in both units is
+ * irrelevant.
  *
- * ####Examples####
+ *
+ * Examples
+ * ------------------------
  * ~~~~~~~~~~~~~~~~~~~~{.cpp}
  * class Dim1;
  * class Dim2;
@@ -1543,11 +1520,95 @@ using RatioFactorOf = Helper::RatioFactor<FactorOf<T>,FactorOf<U>>;
  * IsEqual<DimensionOf<Compound<Power<Un1, 3>, Un3>>,DimensionOf<Compound<Power<Un2, 2>, Un3, Un3>>>::value; // false
  * IsEqual<DimensionOf<Compound<Power<Un1, 3>, Un3>>,Compound<Power<Dim1, 3>, Dim2>>::value; // true
  * ~~~~~~~~~~~~~~~~~~~~
+ *
+ * @remark
+ * You can specialize this class of you want your units or dimensions to get
+ * special treatment when comparing. Default implemntation compares compound
+ * types by comparing simple types from one compound to types in second compound
+ * using `IsEqual`, until a fitting type is found.
  */
+
+template <typename T, typename U, bool areSimple>
+class IsEqual: public std::integral_constant<bool, Helper::IsEqualHelper<T, U>::value>{};
+
+/** @cond DOXYGEN_EXCLUDE */
 template <typename T, typename U>
-using IsEqual = Helper::IsEqual<T, U>;
+class IsEqual<T,U, false>: public std::integral_constant<bool, IsEqual<Simplify<T>, Simplify<U>>::value>{};
+/** @endcond */
 
 //------------------------------------------------------------------------------------------------------------------
+/**
+ * @brief Template shortcut used to compare dimensions of two units.
+ *
+ * @tparam T First unit or dimension to be compared.
+ * @tparam U %Second unit or dimension to be compared.
+ *
+ * It is equivalent to `IsEqual<DimensionOf<T>, DimensionOf<U>>`.
+ */
+template <typename T, typename U>
+class IsEqualDimension: public std::integral_constant<bool, IsEqual<DimensionOf<T>, DimensionOf<U>>::value>
+{};
+
+/**
+ * @brief Template used to check if two units are convertible.
+ *
+ * @tparam From Unit in which input value is expressed.
+ * @tparam To Unit in which result value is expressed.
+ *
+ * @remark
+ * You can specialize `Convertible` class in order to allow for non-standard
+ * conversions. If you specialize `Convertible`, you should also specialize
+ * `Convert`, or results of conversions are undefined.
+ */
+template <typename From, typename To>
+class Convertible: public std::integral_constant<bool, IsEqualDimension<From, To>::value>{};
+
+/**
+ * @brief Template function used to check if two units are convertible. If not
+ * is returns a compilation error.
+ *
+ * @tparam From Unit in which input value is expressed.
+ * @tparam To Unit in which result value is expressed.
+ *
+ */
+template <typename From, typename To>
+inline constexpr void checkConvertible(){
+    static_assert(Convertible<From, To>::value, "Attempt to convert value between non-convertible units.");
+}
+
+/**
+ * @brief Template used to convert value expressed in one unit to value
+ * expressed in another.
+ *
+ * @tparam From Unit in which input value is expressed.
+ * @tparam To Unit in which result value is expressed.
+ *
+ * @remark
+ * You can specialize `Convert` class in order to allow for non-standard
+ * conversions. If you specialize `Convert` for a conversion that is not
+ * possible by default, you should also specialize `Convertible`, otherwise
+ * compilation error will ocur before any canoversion can take place.
+ */
+template <typename From, typename To>
+class Convert{
+public:
+    /**
+     * @brief Performs value conversion.
+     *
+     * @tparam T type of value to be converted.
+     * @param t Value to be converted.
+     * @return value expressed in unit `To` if conversion between `From` and
+     * `To` is possible, otherwise it results in compilation error.
+     */
+    template <typename T>
+    // constexpr has some weird requirements.
+    // As soon as GCC 5 is widespread this should go away.
+    static inline constexpr auto value(T t){
+        return checkConvertible<From,To>(),
+               t * RatioFactorOf<From, To>::value;
+    }
+};
+
 }
 //------------------------------------------------------------------------------------------------------------------
 

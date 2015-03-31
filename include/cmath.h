@@ -4,6 +4,10 @@
 #include <cmath>
 #include "quantity.h"
 
+/**
+ * @file cmath.h
+ */
+
 namespace LibUnit{
 
 template <typename Unit, typename T>
@@ -102,7 +106,6 @@ inline auto remquo(Quantity<Unit, T> q, Quantity<U, T2> p, Quantity<Unit, int>* 
             (std::remquo(q.value(), qp, &quot->ref())));
 }
 
-// ToDo: does this even make sense?
 template <typename Unit, typename T, typename U, typename T2>
 inline auto copysign(Quantity<Unit, T> q, Quantity<U, T2> p){
     return Quantity<Unit, decltype(std::copysign(q.value(), p.value()))>
