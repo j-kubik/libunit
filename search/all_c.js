@@ -7,7 +7,6 @@ var searchData=
   ['micro',['Micro',['../group__si__units.html#gaa3e3994587aaa0a5b969304bb2abebbf',1,'LibUnit']]],
   ['mile',['Mile',['../group__imperial__units.html#class_lib_unit_1_1_imperial_1_1_mile',1,'LibUnit::Imperial']]],
   ['mili',['Mili',['../group__si__units.html#ga0e454428050cbe5c018e6b93c0af19b6',1,'LibUnit']]],
-  ['millimetreofmercury',['MillimetreOfMercury',['../group__si__units.html#class_lib_unit_1_1_millimetre_of_mercury',1,'LibUnit']]],
   ['mole',['mole',['../group__si__units.html#ga82024af61799ffc081a43911943f2abd',1,'LibUnit']]],
   ['mole',['Mole',['../group__si__units.html#class_lib_unit_1_1_mole',1,'LibUnit']]]
 ];

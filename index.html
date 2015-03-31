@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.9"/>
-<title>LibUnit: Introduction</title>
+<title>LibUnit: LibUnit</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -77,37 +77,42 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div class="header">
   <div class="headertitle">
-<div class="title">Introduction </div>  </div>
+<div class="title">LibUnit </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>LibUnit is a library that helps to automate unit checking and converting in C++ code that performs computation on values representing quantities that can be represented using different units. At it's current development stage it is compile time only library; this means that all the automation is performed inside compiler and generated executable code (when optimized) should not be influenced by it significantly. It is aimed not to incur any unnecesary performance penalties. Major drawback of it, is that if a program cannot use compile time unit checking because units are varying depending on runtime data, the library provides no support. This will be adressed in future releases of LibUnit.</p>
-<h2>Main Concepts </h2>
+<div class="textblock"><h1><a class="anchor" id="sec_introduction"></a>
+Introduction</h1>
+<p>LibUnit is a library that helps to automate unit checking and converting in C++ code that performs computation on values representing quantities that can be represented using different units. At it's current development stage it is compile time only library; this means that all the automation is performed inside compiler and generated executable code (when optimized) should not be influenced by it significantly. It is aimed not to incur any unnecesary performance penalties. Major drawback of it, is that if a program cannot use compile time unit checking because units are varying depending on runtime data, the library provides no support. This will be adressed in future releases of LibUnit.</p>
+<h1><a class="anchor" id="sec_main_concepts"></a>
+Main Concepts</h1>
 <p>Before learning the library specifics, it is important to learn basic concepts that LibUnit is based upon:</p>
 <ul>
 <li><em>Quantity</em> is a physical property that can be measured. It can be compared against quantities of the same dimension, but <em>it has no numeric value on it's own.</em> A quantity can be expressed as a pair consiting of a Unit quantity of the same dimension and a number by which this unit quantity must be multiplied in order to be equal to such quantity. Possible examples of quantities include: length of a table, duration of a movie, electric current in a cable.</li>
 <li><em>Dimension</em> is a class of quantities that can be compared between each other. Quantitity can be expressed as other quantity of the same dimension multiplied by a number. Possible examples include: length, time, electric current.</li>
 <li><em>Unit</em> is a specific quantity that is adopted by convention and is used as a reference for other quantities of the same dimension. In order to perform computations on quantities, all of them are expressed in terms of unit quantity of the same dimension and a number. Computations are then performed on numbers representing quantities. The results can only be meaningful if numbers used had right corresponding units. Possible units for length dimension include: metre, foot, kilometre, nanometre, mile, light year. This set is not closed, and it is up to a user what units will he use for his purpose. Units outside of standard sets can also be used, but this creates problems when sharing data, it makes it necesary to pass additional information about used unit. For example if a pencil is used as a unit, when sharing data, either length of a pencil expressed in a unit others understand (ie. a SI unit), or the pencil itself must be shared as well.</li>
 </ul>
-<h2>Goals </h2>
+<h1><a class="anchor" id="sec_goals"></a>
+Goals</h1>
 <p>There are different conventions as to which quantity is to be used as a unit, and many units can also adopt prefixes that express decadic multiples or fractions thereof. Because of that, conversions of quantity values are often necesary when performing calculations involving different quantities. LibUnit provides automatic detection of situations in which such conversion is required, and performs it implicitly. For example</p>
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;Quantity&lt;U, double&gt; q1(1.1);</div>
-<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;Quantity&lt;Kilo&lt;U&gt;, double&gt; q2 = q1;</div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;std::cout &lt;&lt; q2; // Prints 0.0011</div>
+<div class="fragment"><div class="line">Quantity&lt;U, double&gt; q1(1.1);</div>
+<div class="line">Quantity&lt;Kilo&lt;U&gt;, <span class="keywordtype">double</span>&gt; q2 = q1;</div>
+<div class="line">std::cout &lt;&lt; q2; <span class="comment">// Prints 0.0011</span></div>
 </div><!-- fragment --><p>Calculations on quantities are usually performed on its values using some standarized set of uints. In order to check validity of used formulas, dimensional analysis is often used. LibUnit is able to compute dimension of a result of mathematical expression on quantities and compare it to dimension of a variable holding the result. If dimensions are not equal, compilation error is generated, hinting use of an invalid formula. For example</p>
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;Quantity&lt;U, double&gt; q1(1.1);</div>
-<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;Quantity&lt;V, double&gt; q2(3.12356);</div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;</div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;Quantity&lt;Compound&lt;U,V&gt;, double&gt; q3 = q1*q2; // correct</div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;Quantity&lt;Compound&lt;U,V&gt;, double&gt; q4 = q1/q2; // compilation error</div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;Quantity&lt;Compound&lt;U,Power&lt;V,-1&gt;&gt;, double&gt; q5 = q1/q2; // correct</div>
-</div><!-- fragment --><h2>Structure </h2>
+<div class="fragment"><div class="line">Quantity&lt;U, double&gt; q1(1.1);</div>
+<div class="line">Quantity&lt;V, double&gt; q2(3.12356);</div>
+<div class="line"></div>
+<div class="line">Quantity&lt;Compound&lt;U,V&gt;, <span class="keywordtype">double</span>&gt; q3 = q1*q2; <span class="comment">// correct</span></div>
+<div class="line">Quantity&lt;Compound&lt;U,V&gt;, <span class="keywordtype">double</span>&gt; q4 = q1/q2; <span class="comment">// compilation error</span></div>
+<div class="line">Quantity&lt;Compound&lt;U,Power&lt;V,-1&gt;&gt;, <span class="keywordtype">double</span>&gt; q5 = q1/q2; <span class="comment">// correct</span></div>
+</div><!-- fragment --><h2>sec_structure Structure </h2>
+<p>Class <a class="el" href="class_lib_unit_1_1_quantity.html">LibUnit::Quantity</a> Quantity.</p>
 <p>ToDo: write about structure of LibUnit.</p>
-<h2>Examples </h2>
+<h2>sec_examples Examples </h2>
 <p>ToDo: add some more examples, or even create additional page for it. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 31 2015 09:43:45 for LibUnit by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 31 2015 09:57:04 for LibUnit by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.9
 </small></address>
