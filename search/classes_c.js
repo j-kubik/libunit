@@ -1,8 +1,7 @@
 var searchData=
 [
-  ['mass',['Mass',['../group__si__units.html#class_lib_unit_1_1_mass',1,'LibUnit']]],
-  ['metre',['Metre',['../group__si__units.html#class_lib_unit_1_1_metre',1,'LibUnit']]],
-  ['mile',['Mile',['../group__imperial__units.html#class_lib_unit_1_1_imperial_1_1_mile',1,'LibUnit::Imperial']]],
-  ['millimetreofmercury',['MillimetreOfMercury',['../group__si__units.html#class_lib_unit_1_1_millimetre_of_mercury',1,'LibUnit']]],
-  ['mole',['Mole',['../group__si__units.html#class_lib_unit_1_1_mole',1,'LibUnit']]]
+  ['pint',['Pint',['../group__imperial__units.html#class_lib_unit_1_1_imperial_1_1_pint',1,'LibUnit::Imperial']]],
+  ['planedegree',['PlaneDegree',['../group__si__units.html#class_lib_unit_1_1_plane_degree',1,'LibUnit']]],
+  ['pound',['Pound',['../group__imperial__units.html#class_lib_unit_1_1_imperial_1_1_pound',1,'LibUnit::Imperial']]],
+  ['power',['Power',['../class_lib_unit_1_1_power.html',1,'LibUnit']]]
 ];

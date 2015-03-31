@@ -1,5 +1,9 @@
 var searchData=
 [
-  ['basicof',['BasicOf',['../class_lib_unit_1_1_helper_1_1_basic_of.html',1,'LibUnit::Helper']]],
-  ['basicof_3c_20power_3c_20t_2c_20pow_20_3e_20_3e',['BasicOf&lt; Power&lt; T, pow &gt; &gt;',['../class_lib_unit_1_1_helper_1_1_basic_of_3_01_power_3_01_t_00_01pow_01_4_01_4.html',1,'LibUnit::Helper']]]
+  ['cable',['Cable',['../group__imperial__units.html#class_lib_unit_1_1_imperial_1_1_cable',1,'LibUnit::Imperial']]],
+  ['candela',['Candela',['../group__si__units.html#class_lib_unit_1_1_candela',1,'LibUnit']]],
+  ['chain',['Chain',['../group__imperial__units.html#class_lib_unit_1_1_imperial_1_1_chain',1,'LibUnit::Imperial']]],
+  ['compound',['Compound',['../class_lib_unit_1_1_compound.html',1,'LibUnit']]],
+  ['convert',['Convert',['../class_lib_unit_1_1_convert.html',1,'LibUnit']]],
+  ['convertible',['Convertible',['../class_lib_unit_1_1_convertible.html',1,'LibUnit']]]
 ];
